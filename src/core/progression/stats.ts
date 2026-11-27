@@ -1,6 +1,7 @@
 import { PLAYER_BASE } from '../../data/player';
+import { SKILLS } from '../../data/skills';
 import { treeNode } from '../../data/tree';
-import type { PlayerStats, RuleId, StatKey } from '../../data/types';
+import type { PlayerStats, RuleId, SkillId, StatKey } from '../../data/types';
 import type { SaveData } from '../save/schema';
 
 export const LEVEL_BONUS = { maxHp: 5, damagePct: 2 } as const;
@@ -41,4 +42,26 @@ export function computePlayerStats(save: SaveData): PlayerStats {
     else rules.push(n.effect.rule);
   }
   return statsFromTotals(t, rules);
+}
+
+const PASSIVE_TO_FIELD: Partial<Record<StatKey, keyof Omit<PlayerStats, 'rules' | 'maxHp' | 'regen'>>> = {
+  damagePct: 'damageMult', areaPct: 'areaMult', moveSpeedPct: 'moveSpeedMult', xpGainPct: 'xpGainMult', pickupRangePct: 'pickupRangeMult',
+};
+
+/** Tur içi pasif yetenekleri kalıcı istatistiklerin üstüne uygular. */
+export function runStats(base: PlayerStats, skills: Partial<Record<SkillId, number>>): PlayerStats {
+  const out: PlayerStats = { ...base, rules: [...base.rules] };
+  for (const [id, lv] of Object.entries(skills) as [SkillId, number][]) {
+    const def = SKILLS[id];
+    if (def.kind !== 'passive' || !lv) continue;
+    for (const [key, per] of Object.entries(def.perLevel) as [StatKey, number][]) {
+      if (key === 'regen') out.regen += per * lv;
+      else if (key === 'maxHp') out.maxHp += per * lv;
+      else {
+        const field = PASSIVE_TO_FIELD[key];
+        if (field) out[field] *= 1 + (per * lv) / 100;
+      }
+    }
+  }
+  return out;
 }
