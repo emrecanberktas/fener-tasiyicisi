@@ -1,6 +1,5 @@
 import { unlockedSkills } from '../core/progression/account';
 import { computePlayerStats, runStats } from '../core/progression/stats';
-import { createRng } from '../core/rng';
 import type { RunResult } from '../core/run/rewards';
 import { createRunState, type RunState } from '../core/run/runState';
 import { startRun, type RunHandle } from '../game/createRun';
@@ -9,7 +8,9 @@ import { createHud } from '../ui/screens/hud';
 import { showLevelUp } from '../ui/screens/levelUp';
 import { showPausePanel } from '../ui/screens/pause';
 import { showRunEnd } from '../ui/screens/runEnd';
-import { finishRun, resultFromState, type FinishedRun } from './runFlow';
+import type { FinishedRun } from './runFlow';
+import { completeRun } from './actions';
+export { abandonActiveRun, completeRun, newId } from './actions';
 import type { Store } from './store';
 
 export type Screen = 'camp' | 'gear' | 'tree' | 'quests' | 'settings' | 'run' | 'runEnd';
@@ -21,19 +22,6 @@ export interface ScreenCtx {
 }
 
 export type ScreenRenderer = (root: HTMLElement, ctx: ScreenCtx, params?: unknown) => () => void;
-
-export const newId = (): string => (globalThis.crypto?.randomUUID?.() ?? `id-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-
-/** Turu sonlandırır, kaydı günceller ve tur sonu ekranına geçer. */
-export async function completeRun(ctx: ScreenCtx, result: RunResult): Promise<FinishedRun> {
-  let finished!: FinishedRun;
-  await ctx.store.update(s => {
-    finished = finishRun(s, result, createRng(ctx.now() >>> 0), newId);
-    return finished.save;
-  });
-  ctx.go('runEnd', { result, finished });
-  return finished;
-}
 
 export const renderRun: ScreenRenderer = (root, ctx, params) => {
   const p = (params ?? {}) as { zoneIndex?: number; resume?: boolean };
@@ -93,13 +81,6 @@ export const renderRunEnd: ScreenRenderer = (root, ctx, params) => {
     onAgain: () => ctx.go('run', { zoneIndex: result.zoneIndex }),
   });
 };
-
-/** Devam istemindeki "Turu bırak": yarım turu ölüm gibi bitirir. */
-export async function abandonActiveRun(ctx: ScreenCtx): Promise<void> {
-  const run = ctx.store.get().activeRun;
-  if (!run) return;
-  await completeRun(ctx, resultFromState(run));
-}
 
 export function createRouter(root: HTMLElement, store: Store, screens: Partial<Record<Screen, ScreenRenderer>>, now: () => number = Date.now): { go(screen: Screen, params?: unknown): void } {
   let cleanup = () => {};
