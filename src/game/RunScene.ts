@@ -36,6 +36,8 @@ export interface RunOptions {
   unlocked: SkillId[];
   /** Tur içi pasiflerle güncellenmiş istatistikler (G13). Verilmezse stats kullanılır. */
   statsFor?: (state: RunState) => PlayerStats;
+  /** ?perf=1: 300 düşmanla başla ve FPS göster. */
+  perf?: boolean;
   onHud(h: HudState): void;
   onLevelUp(choices: LevelUpChoice[], state: RunState): void;
   onAutosave(s: RunState): void;
@@ -107,7 +109,7 @@ export class RunScene extends Phaser.Scene {
     this.joyBase = this.add.image(0, 0, TEX.circle).setScrollFactor(0).setAlpha(0.12).setScale((JOYSTICK_RADIUS * 2) / CIRCLE_SIZE).setVisible(false).setDepth(20);
     this.joyKnob = this.add.image(0, 0, TEX.circle).setScrollFactor(0).setAlpha(0.3).setScale(0.9).setVisible(false).setDepth(21);
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
-      if (this.paused || !isInJoystickZone(p.y, VIEW_H)) return;
+      if (this.paused || !isInJoystickZone(p.y, this.scale.height)) return;
       this.joyOrigin = { x: p.x, y: p.y };
       this.joyPointer = { x: p.x, y: p.y };
       this.joyBase.setPosition(p.x, p.y).setVisible(true);
@@ -139,7 +141,21 @@ export class RunScene extends Phaser.Scene {
     this.syncBehaviors();
     this.cameras.main.centerOn(this.state.playerX, this.state.playerY);
     this.emitHud();
+    if (this.opts.perf) this.startPerfMode();
     if (this.state.pendingLevelUps > 0) this.openLevelUp();
+  }
+
+  private startPerfMode(): void {
+    for (let i = 0; i < MAX_ALIVE; i++) {
+      const e = this.spawnEnemy(pickEnemyType(this.rng, 300));
+      const a = this.rng.next() * Math.PI * 2, d = 150 + this.rng.next() * 500;
+      e.x = this.player.x + Math.cos(a) * d; e.y = this.player.y + Math.sin(a) * d;
+    }
+    const txt = this.add.text(12, 120, '', { fontFamily: 'monospace', fontSize: '16px', color: '#9fffb0' }).setScrollFactor(0).setDepth(50);
+    this.time.addEvent({ delay: 500, loop: true, callback: () => {
+      const alive = this.enemies.filter(e => e.alive).length;
+      txt.setText(`FPS ${this.game.loop.actualFps.toFixed(0)} · düşman ${alive}`);
+    } });
   }
 
   // ---- dış kontrol ----

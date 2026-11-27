@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { LevelUpChoice } from '../core/run/runState';
-import { RunScene, VIEW_H, VIEW_W, type RunOptions } from './RunScene';
+import { RunScene, type RunOptions } from './RunScene';
 
 export type { HudState, RunOptions } from './RunScene';
 
@@ -18,10 +18,10 @@ export function startRun(container: HTMLElement, opts: RunOptions): RunHandle {
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: container,
-    width: VIEW_W,
-    height: VIEW_H,
+    width: container.clientWidth || 390,
+    height: container.clientHeight || 844,
     backgroundColor: '#000000',
-    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+    scale: { mode: Phaser.Scale.RESIZE },
     input: { activePointers: 1 },
     render: { antialias: true, powerPreference: 'high-performance' },
     scene,

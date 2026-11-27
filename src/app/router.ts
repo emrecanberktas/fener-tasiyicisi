@@ -51,6 +51,7 @@ export const renderRun: ScreenRenderer = (root, ctx, params) => {
   run = startRun(gameEl, {
     state, stats, unlocked,
     statsFor: s => runStats(stats, s.skills),
+    perf: new URLSearchParams(location.search).get('perf') === '1',
     onHud: hs => hud.update(hs),
     onLevelUp: (choices, cur) => {
       closeOverlay();
