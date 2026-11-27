@@ -9,6 +9,7 @@ import { showLevelUp } from '../ui/screens/levelUp';
 import { showPausePanel } from '../ui/screens/pause';
 import { showRunEnd } from '../ui/screens/runEnd';
 import type { FinishedRun } from './runFlow';
+import { vibrate } from './haptics';
 import { completeRun } from './actions';
 export { abandonActiveRun, completeRun, newId } from './actions';
 import type { Store } from './store';
@@ -71,6 +72,7 @@ export const renderRun: ScreenRenderer = (root, ctx, params) => {
     // Arka plandan dönüşte tur donmuş görünmesin: duraklatma paneli açık beklesin.
     // Seviye kartı açıksa o zaten bekliyor; onu kapatmıyoruz.
     onBackground: () => { if (!levelUpOpen) openPause(); },
+    onHaptic: e => vibrate(e, ctx.store.get().settings.vibration),
     onEnd: result => {
       ended = true;
       // Phaser güncelleme döngüsünün içinden çağrılabilir; oyunu bu karede yok etmemek için ertele.

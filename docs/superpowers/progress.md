@@ -58,3 +58,10 @@ Final: minor (deferred): resumed run after boss spawned respawns the boss at ful
 Final: minor (deferred): camp idle amount doesn't tick while the camp screen is open (updates on next render)
 Final: minor (deferred): resumed run loses fallback bonusKor earned before the save
 Final: minor (deferred): sparks from enemies killed at the ring edge sit outside pickup range until the player moves
+Sonrası (2026-11-27, pixel art sonrası):
+- fixed: halka kenarında ölenlerin kıvılcımları toplanmıyordu — PLAYER_BASE.pickupRange 50 → 90 (test: toplama mesafesi > halka yarıçapı + 10). Ruling: denge değeri, plan sabitlememişti.
+- fixed: devam edilen turda boss tam canla doğuyordu — RunState.bossHpRatio (eski kayıtlar normalizeRunState ile tamamlanır)
+- fixed: devam edilen turda yedek karttan gelen Kor kayboluyordu — RunState.bonusKor
+- fixed: kamp açıkken idle birikim sayısı donuktu — 30 sn'de bir yeniden çizim
+- added: titreşim (hasar, seviye, ölüm) + ayarlarda aç/kapa; iOS Safari desteklemez
+- added: düşman ölünce basamaklı sis bulutu efekti (havuzlu, en fazla 60)

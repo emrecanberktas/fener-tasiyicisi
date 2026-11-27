@@ -45,3 +45,16 @@ test('yarım tur varsa devam istemi çıkar', async () => {
   click('[data-resume]');
   expect(go).toHaveBeenCalledWith('run', { resume: true });
 });
+
+test('kamp açıkken birikim kendiliğinden güncellenir', async () => {
+  vi.useFakeTimers();
+  let now = 0;
+  const store = await storeWith({ bestRunKor: 200, idle: { lastCollectedAt: 0 } });
+  const cleanup = renderCamp(document.body, { store, go: vi.fn(), now: () => now });
+  expect(document.querySelector('[data-collect]')).toBeNull();
+  now = 12 * H;
+  vi.advanceTimersByTime(30_000);
+  expect(document.querySelector('[data-collect]')?.textContent).toContain('175');
+  cleanup();
+  vi.useRealTimers();
+});

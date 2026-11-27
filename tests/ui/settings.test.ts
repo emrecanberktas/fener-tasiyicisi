@@ -33,3 +33,12 @@ test('dışa aktarma metni kaydı içerir', async () => {
   click('[data-export]');
   expect((document.querySelector('[data-export-text]') as HTMLTextAreaElement).value).toContain('"kor":31');
 });
+
+test('titreşim ayarı açılıp kapanır', async () => {
+  const store = await storeWith();
+  renderSettings(document.body, { store, go: vi.fn(), now: () => 0 });
+  expect(store.get().settings.vibration).toBe(true);
+  click('[data-vibration]');
+  await flush();
+  expect(store.get().settings.vibration).toBe(false);
+});

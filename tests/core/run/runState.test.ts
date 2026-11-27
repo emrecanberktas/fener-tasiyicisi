@@ -63,6 +63,7 @@ test('seçim uygulama', () => {
   expect(applyLevelUpChoice(s, { type: 'fallback', kind: 'heal' }, stats).state.hp).toBe(80);
   expect(applyLevelUpChoice({ ...s, hp: 95 }, { type: 'fallback', kind: 'heal' }, stats).state.hp).toBe(100);
   expect(applyLevelUpChoice(s, { type: 'fallback', kind: 'kor' }, stats).bonusKor).toBe(20);
+  expect(applyLevelUpChoice(s, { type: 'fallback', kind: 'kor' }, stats).state.bonusKor).toBe(20);
 });
 test('serialize gidiş-dönüş', () => {
   const s = createRunState(9, 1, stats, unlocked);
@@ -70,4 +71,12 @@ test('serialize gidiş-dönüş', () => {
   expect(isRunState(back)).toBe(true); expect(back).toEqual(s);
   expect(isRunState({ ...back, level: 'x' })).toBe(false);
   expect(isRunState(null)).toBe(false);
+});
+
+test('yeni alanlar başlangıçta boş, eski kayıttaki tur da kabul edilir', () => {
+  expect(base.bonusKor).toBe(0);
+  expect(base.bossHpRatio).toBeNull();
+  const legacy: Record<string, unknown> = JSON.parse(JSON.stringify(base));
+  delete legacy.bonusKor; delete legacy.bossHpRatio;
+  expect(isRunState(legacy)).toBe(true);
 });

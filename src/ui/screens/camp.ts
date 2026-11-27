@@ -71,5 +71,7 @@ export const renderCamp: ScreenRenderer = (root, ctx) => {
       onAbandon: () => void abandonActiveRun(ctx),
     });
   }
-  return () => { closePrompt(); cleanup(); };
+  // Birikim sayısı kamp açıkken de artsın.
+  const tick = setInterval(() => redraw(), 30_000);
+  return () => { clearInterval(tick); closePrompt(); cleanup(); };
 };

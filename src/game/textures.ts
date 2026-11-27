@@ -10,7 +10,7 @@ export const GLOW_SIZE = 24;
 
 export const TEX = {
   player: 'player', spark: 'spark', bolt: 'bolt', flame: 'flame', spear: 'spear',
-  light: 'light', ring: 'ring', glow: 'glow', mistGlow: 'mistGlow', ground: 'ground', boss: 'mistHeart',
+  light: 'light', ring: 'ring', glow: 'glow', mistGlow: 'mistGlow', ground: 'ground', boss: 'mistHeart', puff: 'puff',
 } as const;
 
 const add = (scene: Phaser.Scene, key: string, g: Grid) => {
@@ -26,6 +26,7 @@ export function makeTextures(scene: Phaser.Scene): void {
   add(scene, TEX.glow, ditherDisc(GLOW_SIZE, 'E', 0.35, 'Y', 0.2));
   add(scene, TEX.mistGlow, ditherDisc(GLOW_SIZE, 'C', 0.35));
   add(scene, TEX.ground, groundTile());
+  add(scene, TEX.puff, ditherDisc(12, 'F', 0.25));
 }
 
 /** Ekran boyutuna göre sis çerçevesi dokusu (her boyut için bir kez). */

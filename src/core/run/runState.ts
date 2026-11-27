@@ -22,6 +22,10 @@ export interface RunState {
   bossSpawned: boolean;
   playerX: number;
   playerY: number;
+  /** Yedek karttan (+Kor) bu turda kazanılan Kor. */
+  bonusKor: number;
+  /** Boss çıktıysa kalan canı (0..1); devam edilen turda boss bu canla döner. */
+  bossHpRatio: number | null;
 }
 
 export type LevelUpChoice =
@@ -37,6 +41,7 @@ export function createRunState(seed: number, zoneIndex: number, stats: PlayerSta
   return {
     seed, zoneIndex, elapsedSec: 0, level: 1, xp: 0, hp: stats.maxHp, kills: 0, skills,
     pendingLevelUps: 0, rerollsLeft: stats.rules.includes('oneReroll') ? 1 : 0, bossSpawned: false, playerX: 0, playerY: 0,
+    bonusKor: 0, bossHpRatio: null,
   };
 }
 
@@ -80,7 +85,7 @@ export function applyLevelUpChoice(state: RunState, choice: LevelUpChoice, stats
   const next = { ...state, pendingLevelUps: Math.max(0, state.pendingLevelUps - 1) };
   if (choice.type === 'skill') return { state: { ...next, skills: { ...next.skills, [choice.skillId]: choice.newLevel } }, bonusKor: 0 };
   if (choice.kind === 'heal') return { state: { ...next, hp: Math.min(stats.maxHp, next.hp + stats.maxHp * FALLBACK_HEAL_RATIO) }, bonusKor: 0 };
-  return { state: next, bonusKor: FALLBACK_KOR };
+  return { state: { ...next, bonusKor: (next.bonusKor ?? 0) + FALLBACK_KOR }, bonusKor: FALLBACK_KOR };
 }
 
 const isNum = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
@@ -91,6 +96,14 @@ export function isRunState(x: unknown): x is RunState {
   const nums = ['seed', 'zoneIndex', 'elapsedSec', 'level', 'xp', 'hp', 'kills', 'pendingLevelUps', 'rerollsLeft', 'playerX', 'playerY'];
   if (!nums.every(k => isNum(r[k]))) return false;
   if (typeof r.bossSpawned !== 'boolean') return false;
+  // Sonradan eklenen alanlar: eski kayıtlarda olmayabilir.
+  if (r.bonusKor !== undefined && !isNum(r.bonusKor)) return false;
+  if (r.bossHpRatio !== undefined && r.bossHpRatio !== null && !isNum(r.bossHpRatio)) return false;
   if (typeof r.skills !== 'object' || r.skills === null) return false;
   return Object.entries(r.skills).every(([k, v]) => k in SKILLS && isNum(v));
+}
+
+/** Eski kayıtlardan gelen turu güncel alanlarla tamamlar. */
+export function normalizeRunState(s: RunState): RunState {
+  return { ...s, bonusKor: s.bonusKor ?? 0, bossHpRatio: s.bossHpRatio ?? null };
 }

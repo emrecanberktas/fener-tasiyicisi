@@ -54,3 +54,8 @@ test('her veri kimliğinin tema karşılığı var', () => {
   expect(theme.zones[0].name).toBe('Sisli Orman');
   expect(theme.slots).toEqual({ hazne: 'Hazne', cam: 'Cam', fitil: 'Fitil' });
 });
+
+import { PLAYER_BASE } from '../../src/data/player';
+test('toplama mesafesi Işık Halkası kenarında ölenlerin kıvılcımlarına yetişir', () => {
+  expect(PLAYER_BASE.pickupRange).toBeGreaterThan((SKILLS.lightRing.base.radius ?? 0) + 10);
+});

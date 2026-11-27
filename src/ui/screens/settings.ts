@@ -46,7 +46,18 @@ export const renderSettings: ScreenRenderer = (root, ctx) => {
     },
   });
 
+  const vib = () => ctx.store.get().settings.vibration;
+  const vibBtn = h('button', {
+    class: 'btn-quiet px', 'data-vibration': '', 'aria-pressed': String(vib()),
+    onclick: () => void ctx.store.update(s => ({ ...s, settings: { ...s.settings, vibration: !s.settings.vibration } })).then(() => {
+      vibBtn.textContent = vib() ? 'Titreşim açık' : 'Titreşim kapalı';
+      vibBtn.setAttribute('aria-pressed', String(vib()));
+    }),
+  }, vib() ? 'Titreşim açık' : 'Titreşim kapalı');
   const el = subScreen('Ayarlar', [
+    h('h3', {}, 'Dokunsal geri bildirim'),
+    h('p', { class: 'muted small' }, 'Hasar aldığında, seviye atladığında ve fenerin söndüğünde telefon kısa titrer. iPhone tarayıcıları desteklemez.'),
+    vibBtn,
     h('h3', {}, 'Kaydı yedekle'),
     h('p', { class: 'muted small' }, 'Oyun tarayıcıda çalıştığı için kaydın silinebilir. Ara sıra yedek almak iyi olur.'),
     h('button', { class: 'btn-quiet px', 'data-export': '', onclick: doExport }, 'Yedeği indir ve kopyala'),

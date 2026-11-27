@@ -22,5 +22,5 @@ export function finishRun(save: SaveData, result: RunResult, rng: Rng, newId: ()
 
 /** Yarım kalan turu ölüm gibi bitirirken kullanılır. */
 export function resultFromState(s: RunState): RunResult {
-  return { zoneIndex: s.zoneIndex, survivedSec: Math.floor(s.elapsedSec), kills: s.kills, bossDefeated: false, skills: { ...s.skills }, bonusKor: 0 };
+  return { zoneIndex: s.zoneIndex, survivedSec: Math.floor(s.elapsedSec), kills: s.kills, bossDefeated: false, skills: { ...s.skills }, bonusKor: s.bonusKor ?? 0 };
 }

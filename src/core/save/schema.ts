@@ -1,5 +1,5 @@
 import type { GearItem, GearSlot, QuestTemplate, Rarity } from '../../data/types';
-import { isRunState, type RunState } from '../run/runState';
+import { isRunState, normalizeRunState, type RunState } from '../run/runState';
 
 export const CURRENT_VERSION = 1;
 
@@ -74,7 +74,7 @@ export function migrateSave(raw: unknown): SaveData {
   const settings = isObj(r.settings) ? { ...def.settings, ...r.settings } : def.settings;
   return {
     ...(r as unknown as SaveData),
-    activeRun: isRunState(r.activeRun) ? r.activeRun : null,
+    activeRun: isRunState(r.activeRun) ? normalizeRunState(r.activeRun) : null,
     settings: settings as SaveData['settings'],
   };
 }

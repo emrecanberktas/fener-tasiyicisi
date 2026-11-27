@@ -27,6 +27,7 @@ const PROJECTILE_SPEED = 160;
 const PROJECTILE_LIFE = 3;
 const HUD_INTERVAL = 0.1;
 const GRID_CELL = 64;
+const PUFF_LIFE = 0.35;
 
 export interface HudState { elapsedSec: number; level: number; xpRatio: number; hpRatio: number; bossHpRatio: number | null }
 
@@ -44,6 +45,8 @@ export interface RunOptions {
   onEnd(result: RunResult): void;
   /** Uygulama arka plana geçti; tur duraklatıldı ve kaydedildi. */
   onBackground?(): void;
+  /** Dokunsal geri bildirim anları. */
+  onHaptic?(e: 'hurt' | 'levelUp' | 'death'): void;
 }
 
 interface Enemy {
@@ -72,6 +75,7 @@ export class RunScene extends Phaser.Scene {
   private byId = new Map<number, Enemy>();
   private sparks: Spark[] = [];
   private projectiles: Projectile[] = [];
+  private puffs: { img: Phaser.GameObjects.Image; life: number; alive: boolean }[] = [];
   private grid = new SpatialGrid(GRID_CELL);
   private behaviors = new Map<SkillId, SkillBehavior>();
   private player!: Phaser.GameObjects.Image;
@@ -87,7 +91,6 @@ export class RunScene extends Phaser.Scene {
   private invuln = 0;
   private hudAcc = 0;
   private autosaveAcc = 0;
-  private bonusKor = 0;
   private paused = false;
   private inLevelUp = false;
   private ended = false;
@@ -177,13 +180,14 @@ export class RunScene extends Phaser.Scene {
 
   pauseRun(): void { this.paused = true; }
   resumeRun(): void { if (!this.inLevelUp && !this.ended) this.paused = false; }
-  getState(): RunState { return { ...this.state, playerX: this.player.x, playerY: this.player.y }; }
+  getState(): RunState {
+    return { ...this.state, playerX: this.player.x, playerY: this.player.y, bossHpRatio: this.boss ? this.boss.hp / this.boss.maxHp : this.state.bossHpRatio };
+  }
 
   chooseLevelUp(choice: LevelUpChoice): void {
     if (!this.inLevelUp) return;
     const r = applyLevelUpChoice(this.state, choice, this.stats);
     this.state = r.state;
-    this.bonusKor += r.bonusKor;
     this.refreshStats();
     this.syncBehaviors();
     this.inLevelUp = false;
@@ -224,6 +228,7 @@ export class RunScene extends Phaser.Scene {
     if (this.ended) return;
 
     this.updateSparks(dt);
+    this.updatePuffs(dt);
     if (this.stats.regen > 0) this.state.hp = Math.min(this.stats.maxHp, this.state.hp + this.stats.regen * dt);
     this.invuln = Math.max(0, this.invuln - dt);
     if (this.state.hp <= 0) { this.endRun(false); return; }
@@ -277,8 +282,10 @@ export class RunScene extends Phaser.Scene {
       this.state.bossSpawned = true;
       this.boss = this.spawnEnemy('mistHeart');
     } else if (this.state.bossSpawned && !this.boss) {
-      // Devam edilen turda boss yeniden doğar.
+      // Devam edilen turda boss kaldığı canla geri gelir.
       this.boss = this.spawnEnemy('mistHeart');
+      const ratio = this.state.bossHpRatio;
+      if (ratio !== null && ratio !== undefined) this.boss.hp = Math.max(1, this.boss.maxHp * ratio);
     }
   }
 
@@ -348,9 +355,35 @@ export class RunScene extends Phaser.Scene {
     if (e.hp > 0) return;
     e.alive = false;
     e.img.setVisible(false);
+    this.puff(e.x, e.y, e.def.isBoss ? 6 : e.radius / 8);
     this.state.kills += 1;
     if (e.def.xpValue > 0) this.dropSpark(e.x, e.y, e.def.xpValue);
     if (e.def.isBoss) { this.boss = null; this.endRun(true); }
+  }
+
+  private puff(x: number, y: number, size: number): void {
+    let p = this.puffs.find(q => !q.alive);
+    if (!p) {
+      if (this.puffs.length >= 60) return;
+      p = { img: this.add.image(x, y, TEX.puff).setDepth(3), life: 0, alive: false };
+      this.puffs.push(p);
+    }
+    p.alive = true;
+    p.life = PUFF_LIFE;
+    p.img.setPosition(x, y).setScale(PIXEL * size * 0.6).setAlpha(0.8).setVisible(true).setData('size', size);
+  }
+
+  private updatePuffs(dt: number): void {
+    for (const p of this.puffs) {
+      if (!p.alive) continue;
+      p.life -= dt;
+      const t = 1 - p.life / PUFF_LIFE;
+      const size = p.img.getData('size') as number;
+      // Basamaklı büyüme ve sönme: pixel hissini korur.
+      const step = Math.floor(t * 4) / 4;
+      p.img.setScale(PIXEL * size * (0.6 + step * 0.6)).setAlpha(0.8 * (1 - step));
+      if (p.life <= 0) { p.alive = false; p.img.setVisible(false); }
+    }
   }
 
   private dropSpark(x: number, y: number, value: number): void {
@@ -420,6 +453,7 @@ export class RunScene extends Phaser.Scene {
     if (this.invuln > 0) return;
     this.state.hp -= amount;
     this.invuln = INVULN_SEC;
+    this.opts.onHaptic?.('hurt');
     this.player.setAlpha(0.4);
     this.time.delayedCall(INVULN_SEC * 1000, () => this.player.setAlpha(1));
   }
@@ -455,6 +489,7 @@ export class RunScene extends Phaser.Scene {
     this.joyBase.setVisible(false);
     this.joyKnob.setVisible(false);
     this.emitHud();
+    this.opts.onHaptic?.('levelUp');
     this.opts.onLevelUp(this.rollChoices(), this.getState());
   }
 
@@ -473,13 +508,14 @@ export class RunScene extends Phaser.Scene {
     if (this.ended) return;
     this.ended = true;
     this.paused = true;
+    if (!bossDefeated) this.opts.onHaptic?.('death');
     this.opts.onEnd({
       zoneIndex: this.state.zoneIndex,
       survivedSec: Math.floor(this.state.elapsedSec),
       kills: this.state.kills,
       bossDefeated,
       skills: { ...this.state.skills },
-      bonusKor: this.bonusKor,
+      bonusKor: this.state.bonusKor ?? 0,
     });
   }
 }

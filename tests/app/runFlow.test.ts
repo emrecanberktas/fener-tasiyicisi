@@ -24,3 +24,13 @@ test('yarım turdan sonuç: boss yok, süre tam sayı', () => {
   const st = { ...createRunState(1, 1, { maxHp: 100, regen: 0, damageMult: 1, areaMult: 1, moveSpeedMult: 1, xpGainMult: 1, pickupRangeMult: 1, rules: [] }, ['lightRing']), elapsedSec: 130.7, kills: 55 };
   expect(resultFromState(st)).toEqual({ zoneIndex: 1, survivedSec: 130, kills: 55, bossDefeated: false, skills: { lightRing: 1 }, bonusKor: 0 });
 });
+
+test('yarım turdan sonuç yedek karttan gelen Koru korur', () => {
+  const st = { ...createRunState(1, 0, { maxHp: 100, regen: 0, damageMult: 1, areaMult: 1, moveSpeedMult: 1, xpGainMult: 1, pickupRangeMult: 1, rules: [] }, ['lightRing']), bonusKor: 40 };
+  expect(resultFromState(st).bonusKor).toBe(40);
+});
+test('eski kayıttaki turda bonusKor yoksa 0', () => {
+  const st = createRunState(1, 0, { maxHp: 100, regen: 0, damageMult: 1, areaMult: 1, moveSpeedMult: 1, xpGainMult: 1, pickupRangeMult: 1, rules: [] }, ['lightRing']) as unknown as Record<string, unknown>;
+  delete st.bonusKor;
+  expect(resultFromState(st as never).bonusKor).toBe(0);
+});
