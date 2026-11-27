@@ -1,4 +1,5 @@
 import type { GearItem, GearSlot, QuestTemplate, Rarity } from '../../data/types';
+import { isRunState, type RunState } from '../run/runState';
 
 export const CURRENT_VERSION = 1;
 
@@ -19,7 +20,7 @@ export interface SaveData {
   bestRunKor: number;
   idle: { lastCollectedAt: number };
   quests: { active: Quest[]; counter: number };
-  activeRun: unknown | null;
+  activeRun: RunState | null;
   settings: { vibration: boolean };
 }
 
@@ -73,7 +74,7 @@ export function migrateSave(raw: unknown): SaveData {
   const settings = isObj(r.settings) ? { ...def.settings, ...r.settings } : def.settings;
   return {
     ...(r as unknown as SaveData),
-    activeRun: r.activeRun ?? null,
+    activeRun: isRunState(r.activeRun) ? r.activeRun : null,
     settings: settings as SaveData['settings'],
   };
 }
