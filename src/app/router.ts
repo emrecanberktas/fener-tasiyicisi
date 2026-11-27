@@ -38,16 +38,20 @@ export const renderRun: ScreenRenderer = (root, ctx, params) => {
   let run: RunHandle | null = null;
   let closeOverlay = () => {};
   let ended = false;
-  const hud = createHud(root, {
-    onPause: () => {
-      run?.pause();
-      closeOverlay();
-      closeOverlay = showPausePanel(root, {
-        onContinue: () => { closeOverlay(); run?.resume(); },
-        onEnd: () => { closeOverlay(); run?.forfeit(); },
-      });
-    },
-  });
+  let levelUpOpen = false;
+  let pauseOpen = false;
+  const openPause = () => {
+    if (pauseOpen || ended) return;
+    run?.pause();
+    closeOverlay();
+    pauseOpen = true;
+    const close = showPausePanel(root, {
+      onContinue: () => { close(); pauseOpen = false; closeOverlay = () => {}; run?.resume(); },
+      onEnd: () => { close(); pauseOpen = false; closeOverlay = () => {}; run?.forfeit(); },
+    });
+    closeOverlay = () => { close(); pauseOpen = false; };
+  };
+  const hud = createHud(root, { onPause: openPause });
   run = startRun(gameEl, {
     state, stats, unlocked,
     statsFor: s => runStats(stats, s.skills),
@@ -55,16 +59,22 @@ export const renderRun: ScreenRenderer = (root, ctx, params) => {
     onHud: hs => hud.update(hs),
     onLevelUp: (choices, cur) => {
       closeOverlay();
-      closeOverlay = showLevelUp(root, choices, cur, {
+      levelUpOpen = true;
+      const close = showLevelUp(root, choices, cur, {
         rerollsLeft: cur.rerollsLeft,
         onChoose: c => { closeOverlay(); closeOverlay = () => {}; run?.chooseLevelUp(c); },
         onReroll: () => run?.reroll(),
       });
+      closeOverlay = () => { close(); levelUpOpen = false; };
     },
     onAutosave: s => { if (!ended) void ctx.store.update(sv => ({ ...sv, activeRun: s })); },
+    // Arka plandan dönüşte tur donmuş görünmesin: duraklatma paneli açık beklesin.
+    // Seviye kartı açıksa o zaten bekliyor; onu kapatmıyoruz.
+    onBackground: () => { if (!levelUpOpen) openPause(); },
     onEnd: result => {
       ended = true;
-      void completeRun(ctx, result);
+      // Phaser güncelleme döngüsünün içinden çağrılabilir; oyunu bu karede yok etmemek için ertele.
+      setTimeout(() => void completeRun(ctx, result), 0);
     },
   });
   return () => {

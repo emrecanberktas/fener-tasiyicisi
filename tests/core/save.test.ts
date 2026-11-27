@@ -27,3 +27,13 @@ test('IndexedDB yoksa localStorage yedeğine yazar ve okur', async () => {
   await store.save(s);
   expect(await store.load()).toEqual(s);
 });
+
+test('bozuk kayıt okunamazsa ham hali yedeklenir, sonra hata fırlatılır', async () => {
+  localStorage.clear();
+  localStorage.setItem('fener.save', '{"version":1,"kor":"bozuk"}');
+  const store = createSaveStore({ idb: false });
+  await expect(store.load()).rejects.toThrow(SaveFormatError);
+  const backups = Object.keys(localStorage).filter(k => k.startsWith('fener.save.corrupt-'));
+  expect(backups).toHaveLength(1);
+  expect(localStorage.getItem(backups[0]!)).toBe('{"version":1,"kor":"bozuk"}');
+});

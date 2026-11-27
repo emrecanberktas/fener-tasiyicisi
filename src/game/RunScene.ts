@@ -42,6 +42,8 @@ export interface RunOptions {
   onLevelUp(choices: LevelUpChoice[], state: RunState): void;
   onAutosave(s: RunState): void;
   onEnd(result: RunResult): void;
+  /** Uygulama arka plana geçti; tur duraklatıldı ve kaydedildi. */
+  onBackground?(): void;
 }
 
 interface Enemy {

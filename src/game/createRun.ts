@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { LevelUpChoice } from '../core/run/runState';
 import { RunScene, type RunOptions } from './RunScene';
+import { watchVisibility } from './visibility';
 
 export type { HudState, RunOptions } from './RunScene';
 
@@ -26,13 +27,11 @@ export function startRun(container: HTMLElement, opts: RunOptions): RunHandle {
     render: { antialias: true, powerPreference: 'high-performance' },
     scene,
   });
-  const onVisibility = () => {
-    if (document.visibilityState === 'hidden') {
-      scene.pauseRun();
-      opts.onAutosave(scene.getState());
-    }
-  };
-  document.addEventListener('visibilitychange', onVisibility);
+  const stopWatching = watchVisibility(document, () => {
+    scene.pauseRun();
+    opts.onAutosave(scene.getState());
+    opts.onBackground?.();
+  });
   return {
     pause: () => scene.pauseRun(),
     resume: () => scene.resumeRun(),
@@ -40,7 +39,7 @@ export function startRun(container: HTMLElement, opts: RunOptions): RunHandle {
     reroll: () => scene.reroll(),
     forfeit: () => scene.forfeit(),
     destroy: () => {
-      document.removeEventListener('visibilitychange', onVisibility);
+      stopWatching();
       game.destroy(true);
     },
   };

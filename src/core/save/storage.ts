@@ -1,6 +1,8 @@
 import { get, set } from 'idb-keyval';
 import { migrateSave, SaveFormatError, type SaveData } from './schema';
 
+export { SaveFormatError };
+
 export const SAVE_KEY = 'fener.save';
 
 export interface SaveStore {
@@ -8,10 +10,20 @@ export interface SaveStore {
   save(data: SaveData): Promise<void>;
 }
 
+/** Okunamayan kaydın ham halini kaybetmemek için ayrı bir anahtara kopyalar. */
+function parseOrBackup(raw: string): SaveData {
+  try {
+    return importSave(raw);
+  } catch (e) {
+    try { localStorage.setItem(`${SAVE_KEY}.corrupt-${Date.now()}`, raw); } catch { /* depolama dolu */ }
+    throw e;
+  }
+}
+
 const localStore: SaveStore = {
   async load() {
     const raw = localStorage.getItem(SAVE_KEY);
-    return raw ? importSave(raw) : null;
+    return raw ? parseOrBackup(raw) : null;
   },
   async save(data) {
     localStorage.setItem(SAVE_KEY, exportSave(data));
@@ -23,13 +35,13 @@ export function createSaveStore(backend: { idb?: boolean } = {}): SaveStore {
   if (!useIdb) return localStore;
   return {
     async load() {
+      let raw: string | undefined;
       try {
-        const raw = await get<string>(SAVE_KEY);
-        if (raw) return importSave(raw);
-      } catch (e) {
-        if (e instanceof SaveFormatError) throw e;
+        raw = await get<string>(SAVE_KEY);
+      } catch {
+        return localStore.load();
       }
-      return localStore.load();
+      return raw ? parseOrBackup(raw) : localStore.load();
     },
     async save(data) {
       const json = exportSave(data);
