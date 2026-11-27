@@ -1,18 +1,22 @@
 import Phaser from 'phaser';
 import { skillParam } from '../../data/skills';
-import { theme } from '../../theme';
-import { GLOW_SIZE, TEX } from '../textures';
+import { LIGHT_SIZE, TEX } from '../textures';
 import type { SkillBehavior, SkillContext } from './types';
 
 export function createLightRing(scene: Phaser.Scene): SkillBehavior {
-  const img = scene.add.image(0, 0, TEX.glow).setTint(theme.player.light).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.55).setDepth(1);
+  const disc = scene.add.image(0, 0, TEX.light).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.28).setDepth(1);
+  const ring = scene.add.image(0, 0, TEX.ring).setAlpha(0.55).setDepth(1);
+  let t = 0;
   return {
     update(dt: number, ctx: SkillContext) {
+      t += dt;
       const radius = skillParam('lightRing', 'radius', ctx.level) * ctx.stats.areaMult;
       const dps = skillParam('lightRing', 'dps', ctx.level) * ctx.stats.damageMult;
-      img.setPosition(ctx.player.x, ctx.player.y).setScale((radius * 2.4) / GLOW_SIZE);
+      const s = (radius * 2) / LIGHT_SIZE;
+      disc.setPosition(ctx.player.x, ctx.player.y).setScale(s * 1.25);
+      ring.setPosition(ctx.player.x, ctx.player.y).setScale(s).setRotation(Math.floor(t * 4) * 0.08);
       for (const e of ctx.enemiesNear(ctx.player.x, ctx.player.y, radius)) ctx.damage(e, dps * dt);
     },
-    destroy() { img.destroy(); },
+    destroy() { disc.destroy(); ring.destroy(); },
   };
 }

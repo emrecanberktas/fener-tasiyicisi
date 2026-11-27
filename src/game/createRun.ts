@@ -24,7 +24,8 @@ export function startRun(container: HTMLElement, opts: RunOptions): RunHandle {
     backgroundColor: '#000000',
     scale: { mode: Phaser.Scale.RESIZE },
     input: { activePointers: 1 },
-    render: { antialias: true, powerPreference: 'high-performance' },
+    pixelArt: true,
+    render: { powerPreference: 'high-performance' },
     scene,
   });
   const stopWatching = watchVisibility(document, () => {

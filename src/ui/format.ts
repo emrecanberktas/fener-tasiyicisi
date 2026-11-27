@@ -6,7 +6,7 @@ import { questTarget } from '../core/quests';
 export const fmtStat = (k: StatKey, v: number): string => `${theme.stats[k]} +${Math.round(v * 10) / 10}`;
 
 export const fmtGearStats = (g: GearItem): string =>
-  (Object.entries(g.stats) as [StatKey, number][]).map(([k, v]) => fmtStat(k, v)).join(' · ');
+  (Object.entries(g.stats) as [StatKey, number][]).map(([k, v]) => fmtStat(k, v)).join(', ');
 
 const RULE_TEXT: Record<string, string> = {
   startWithTwoSkills: 'Tura 2 yetenekle başla',

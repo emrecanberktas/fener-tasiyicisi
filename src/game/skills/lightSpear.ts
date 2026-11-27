@@ -1,7 +1,6 @@
-import Phaser from 'phaser';
+import type Phaser from 'phaser';
 import { skillParam } from '../../data/skills';
-import { theme } from '../../theme';
-import { TEX } from '../textures';
+import { PIXEL, TEX } from '../textures';
 import type { SkillBehavior } from './types';
 
 const LIFE = 1.6;
@@ -25,12 +24,12 @@ export function createLightSpear(scene: Phaser.Scene): SkillBehavior {
           const speed = skillParam('lightSpear', 'speed', ctx.level);
           let s = spears.find(sp => !sp.alive);
           if (!s) {
-            s = { x: 0, y: 0, vx: 0, vy: 0, life: 0, pierce: 0, hit: new Set(), img: scene.add.image(0, 0, TEX.spark).setTint(theme.player.light).setBlendMode(Phaser.BlendModes.ADD).setDepth(6), alive: false };
+            s = { x: 0, y: 0, vx: 0, vy: 0, life: 0, pierce: 0, hit: new Set(), img: scene.add.image(0, 0, TEX.spear).setDepth(6), alive: false };
             spears.push(s);
           }
           Object.assign(s, { x: ctx.player.x, y: ctx.player.y, vx: (dx / len) * speed, vy: (dy / len) * speed, life: LIFE, pierce: skillParam('lightSpear', 'pierce', ctx.level), alive: true });
           s.hit.clear();
-          s.img.setVisible(true).setScale(2.2, 0.8).setRotation(Math.atan2(dy, dx));
+          s.img.setVisible(true).setScale(PIXEL).setRotation(Math.atan2(dy, dx));
         } else {
           cd = 0.2;
         }

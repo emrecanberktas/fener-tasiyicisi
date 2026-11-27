@@ -1,9 +1,8 @@
-import Phaser from 'phaser';
+import type Phaser from 'phaser';
 import { skillParam } from '../../data/skills';
-import { GLOW_SIZE, TEX } from '../textures';
+import { PIXEL, TEX } from '../textures';
 import type { SkillBehavior } from './types';
 
-const COLOR = 0xff8a3d;
 const FLAME_RADIUS = 14;
 const HIT_COOLDOWN = 0.5;
 
@@ -17,7 +16,7 @@ export function createOrbitFlames(scene: Phaser.Scene): SkillBehavior {
       clock += dt;
       const count = skillParam('orbitFlames', 'count', ctx.level);
       while (flames.length < count) {
-        flames.push(scene.add.image(0, 0, TEX.glow).setTint(COLOR).setBlendMode(Phaser.BlendModes.ADD).setScale((FLAME_RADIUS * 3) / GLOW_SIZE).setDepth(6));
+        flames.push(scene.add.image(0, 0, TEX.flame).setScale(PIXEL).setDepth(6));
       }
       const radius = skillParam('orbitFlames', 'radius', ctx.level) * ctx.stats.areaMult;
       const dmg = skillParam('orbitFlames', 'damage', ctx.level) * ctx.stats.damageMult;
@@ -26,7 +25,7 @@ export function createOrbitFlames(scene: Phaser.Scene): SkillBehavior {
         const a = angle + (i / flames.length) * Math.PI * 2;
         const x = ctx.player.x + Math.cos(a) * radius;
         const y = ctx.player.y + Math.sin(a) * radius;
-        f.setPosition(x, y);
+        f.setPosition(Math.round(x), Math.round(y)).setFlipX(Math.floor(clock * 8 + i) % 2 === 0);
         for (const e of ctx.enemiesNear(x, y, FLAME_RADIUS)) {
           if (clock - (lastHit.get(e.id) ?? -1) < HIT_COOLDOWN) continue;
           lastHit.set(e.id, clock);

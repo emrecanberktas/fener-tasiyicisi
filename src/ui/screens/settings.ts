@@ -29,7 +29,7 @@ export const renderSettings: ScreenRenderer = (root, ctx) => {
       status.append(
         h('p', {}, `Yedek okundu: ${pending.kor} Kor, Taşıyıcı Sv ${pending.account.level}. Mevcut kaydının yerine geçecek.`),
         h('button', {
-          class: 'primary', 'data-import-confirm': '',
+          class: 'btn-main', 'data-import-confirm': '',
           onclick: () => { const p = pending; pending = null; if (p) void ctx.store.update(() => ({ ...p, activeRun: null })).then(() => ctx.go('camp')); },
         }, 'Kaydı değiştir'));
     } catch {
@@ -49,12 +49,12 @@ export const renderSettings: ScreenRenderer = (root, ctx) => {
   const el = subScreen('Ayarlar', [
     h('h3', {}, 'Kaydı yedekle'),
     h('p', { class: 'muted small' }, 'Oyun tarayıcıda çalıştığı için kaydın silinebilir. Ara sıra yedek almak iyi olur.'),
-    h('button', { class: 'ghost', 'data-export': '', onclick: doExport }, 'Dışa aktar (indir + kopyala)'),
+    h('button', { class: 'btn-quiet px', 'data-export': '', onclick: doExport }, 'Yedeği indir ve kopyala'),
     exportText,
     h('h3', {}, 'Yedekten geri yükle'),
     fileInput,
     importText,
-    h('button', { class: 'ghost', 'data-import': '', onclick: () => tryImport(importText.value) }, 'Yapıştırılan metni yükle'),
+    h('button', { class: 'btn-quiet px', 'data-import': '', onclick: () => tryImport(importText.value) }, 'Yapıştırdığım yedeği yükle'),
     status,
   ], [], () => ctx.go('camp'));
   root.append(el);

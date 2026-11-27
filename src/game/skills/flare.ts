@@ -13,7 +13,7 @@ export function createFlare(scene: Phaser.Scene): SkillBehavior {
       cd = Math.max(1, skillParam('flare', 'cooldown', ctx.level));
       const radius = skillParam('flare', 'radius', ctx.level) * ctx.stats.areaMult;
       const dmg = skillParam('flare', 'damage', ctx.level) * ctx.stats.damageMult;
-      flash(scene, ctx.player.x, ctx.player.y, radius, theme.player.light, 400, 3);
+      flash(scene, ctx.player.x, ctx.player.y, radius, theme.player.light, 360, 3);
       for (const e of ctx.enemiesNear(ctx.player.x, ctx.player.y, radius)) ctx.damage(e, dmg);
     },
     destroy() {},

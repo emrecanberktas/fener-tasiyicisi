@@ -8,7 +8,7 @@ test('HUD süreyi ve seviyeyi gösterir, boss çubuğu yalnızca bossta', () => 
   const hud = createHud(document.body, { onPause: vi.fn() });
   hud.update({ elapsedSec: 125, level: 4, xpRatio: 0.5, hpRatio: 1, bossHpRatio: null });
   expect(document.body.textContent).toContain('02:05');
-  expect(document.body.textContent).toContain('Sv 4');
+  expect(document.body.textContent).toContain('Seviye 4');
   expect((document.querySelector('[data-boss]') as HTMLElement).hidden).toBe(true);
   hud.update({ elapsedSec: 481, level: 4, xpRatio: 0.5, hpRatio: 1, bossHpRatio: 0.7 });
   expect((document.querySelector('[data-boss]') as HTMLElement).hidden).toBe(false);

@@ -11,6 +11,7 @@
     "icons": "pwa-assets-generator"
   },
   "dependencies": {
+    "@fontsource/pixelify-sans": "^5.3.0",
     "idb-keyval": "^6.3.0",
     "phaser": "^3.90.0"
   },

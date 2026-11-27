@@ -12,7 +12,7 @@ import { theme } from '../theme';
 import { isInJoystickZone, joystickVector, type Vec } from './joystick';
 import { createSkillBehavior } from './skills/registry';
 import type { EnemyRef, SkillBehavior, SkillContext } from './skills/types';
-import { CIRCLE_SIZE, makeTextures, TEX } from './textures';
+import { LIGHT_SIZE, makeTextures, PIXEL, TEX, vignetteTexture } from './textures';
 
 export const VIEW_W = 540;
 export const VIEW_H = 960;
@@ -56,6 +56,7 @@ interface Enemy {
   y: number;
   radius: number;
   shootCd: number;
+  flash: number;
   img: Phaser.GameObjects.Image;
   alive: boolean;
 }
@@ -74,6 +75,9 @@ export class RunScene extends Phaser.Scene {
   private grid = new SpatialGrid(GRID_CELL);
   private behaviors = new Map<SkillId, SkillBehavior>();
   private player!: Phaser.GameObjects.Image;
+  private ground!: Phaser.GameObjects.TileSprite;
+  private vignette: Phaser.GameObjects.Image | null = null;
+  private clock = 0;
   private playerGlow!: Phaser.GameObjects.Image;
   private joyBase!: Phaser.GameObjects.Image;
   private joyKnob!: Phaser.GameObjects.Image;
@@ -103,13 +107,16 @@ export class RunScene extends Phaser.Scene {
     makeTextures(this);
     const zone = theme.zones[(this.state.zoneIndex as 0 | 1 | 2)] ?? theme.zones[0];
     this.cameras.main.setBackgroundColor(zone.bg);
-    try { this.cameras.main.postFX?.addVignette(0.5, 0.5, 0.9, 0.35); } catch { /* canvas modunda yok */ }
+    this.ground = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, TEX.ground)
+      .setOrigin(0).setScrollFactor(0).setTileScale(PIXEL).setTint(zone.groundTint).setDepth(-10);
+    this.placeVignette();
+    this.scale.on('resize', () => { this.ground.setSize(this.scale.width, this.scale.height); this.placeVignette(); });
 
-    this.playerGlow = this.add.image(0, 0, TEX.glow).setTint(theme.player.light).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.35).setScale(1.2).setDepth(2);
-    this.player = this.add.image(this.state.playerX, this.state.playerY, TEX.circle).setTint(theme.player.color).setScale((PLAYER_RADIUS * 2) / CIRCLE_SIZE).setDepth(5);
+    this.playerGlow = this.add.image(0, 0, TEX.light).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.16).setScale(3).setDepth(0);
+    this.player = this.add.image(this.state.playerX, this.state.playerY, TEX.player).setScale(PIXEL).setDepth(5);
 
-    this.joyBase = this.add.image(0, 0, TEX.circle).setScrollFactor(0).setAlpha(0.12).setScale((JOYSTICK_RADIUS * 2) / CIRCLE_SIZE).setVisible(false).setDepth(20);
-    this.joyKnob = this.add.image(0, 0, TEX.circle).setScrollFactor(0).setAlpha(0.3).setScale(0.9).setVisible(false).setDepth(21);
+    this.joyBase = this.add.image(0, 0, TEX.ring).setScrollFactor(0).setAlpha(0.35).setScale((JOYSTICK_RADIUS * 2) / LIGHT_SIZE).setVisible(false).setDepth(40);
+    this.joyKnob = this.add.image(0, 0, TEX.spark).setScrollFactor(0).setAlpha(0.8).setScale(PIXEL * 2).setVisible(false).setDepth(41);
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       if (this.paused || !isInJoystickZone(p.y, this.scale.height)) return;
       this.joyOrigin = { x: p.x, y: p.y };
@@ -160,6 +167,12 @@ export class RunScene extends Phaser.Scene {
     } });
   }
 
+  private placeVignette(): void {
+    this.vignette?.destroy();
+    this.vignette = this.add.image(0, 0, vignetteTexture(this, this.scale.width, this.scale.height))
+      .setOrigin(0).setScrollFactor(0).setScale(PIXEL).setAlpha(0.75).setDepth(30);
+  }
+
   // ---- dış kontrol ----
 
   pauseRun(): void { this.paused = true; }
@@ -193,6 +206,7 @@ export class RunScene extends Phaser.Scene {
     if (this.paused || this.ended) return;
     const dt = Math.min(deltaMs / 1000, 0.05);
     this.state.elapsedSec += dt;
+    this.clock += dt;
 
     this.movePlayer(dt);
     this.spawn(dt);
@@ -215,6 +229,7 @@ export class RunScene extends Phaser.Scene {
     if (this.state.hp <= 0) { this.endRun(false); return; }
 
     this.cameras.main.centerOn(this.player.x, this.player.y);
+    this.ground.setTilePosition(this.cameras.main.scrollX / PIXEL, this.cameras.main.scrollY / PIXEL);
     this.playerGlow.setPosition(this.player.x, this.player.y);
 
     this.hudAcc += dt;
@@ -245,6 +260,7 @@ export class RunScene extends Phaser.Scene {
     const speed = PLAYER_BASE.moveSpeed * this.stats.moveSpeedMult;
     this.player.x += v.x * speed * dt;
     this.player.y += v.y * speed * dt;
+    if (Math.abs(v.x) > 0.15) this.player.setFlipX(v.x < 0);
   }
 
   private spawn(dt: number): void {
@@ -275,7 +291,7 @@ export class RunScene extends Phaser.Scene {
     const y = this.player.y + Math.sin(a) * SPAWN_DISTANCE;
     let e = this.enemies.find(en => !en.alive);
     if (!e) {
-      e = { id: 0, def, hp: 0, maxHp: 0, damage: 0, x, y, radius: 0, shootCd: 0, img: this.add.image(x, y, TEX.circle).setDepth(4), alive: false };
+      e = { id: 0, def, hp: 0, maxHp: 0, damage: 0, x, y, radius: 0, shootCd: 0, flash: 0, img: this.add.image(x, y, type).setDepth(4), alive: false };
       this.enemies.push(e);
     }
     this.byId.delete(e.id);
@@ -289,7 +305,8 @@ export class RunScene extends Phaser.Scene {
     e.radius = look.radius;
     e.shootCd = def.ranged?.cooldownSec ?? 0;
     e.alive = true;
-    e.img.setPosition(x, y).setTint(look.color).setScale((look.radius * 2) / CIRCLE_SIZE).setVisible(true).setAlpha(1);
+    e.flash = 0;
+    e.img.setTexture(type).setPosition(x, y).clearTint().setScale(PIXEL).setVisible(true).setAlpha(1).setDepth(def.isBoss ? 6 : 4);
     return e;
   }
 
@@ -327,6 +344,7 @@ export class RunScene extends Phaser.Scene {
     const e = this.byId.get(id);
     if (!e || !e.alive) return;
     e.hp -= amount;
+    if (amount >= 3 && e.flash <= 0) { e.flash = 0.07; e.img.setTintFill(0xffe7a3); }
     if (e.hp > 0) return;
     e.alive = false;
     e.img.setVisible(false);
@@ -338,7 +356,7 @@ export class RunScene extends Phaser.Scene {
   private dropSpark(x: number, y: number, value: number): void {
     let s = this.sparks.find(sp => !sp.alive);
     if (!s) {
-      s = { x, y, value, pulled: false, img: this.add.image(x, y, TEX.spark).setTint(theme.player.light).setBlendMode(Phaser.BlendModes.ADD).setDepth(3), alive: false };
+      s = { x, y, value, pulled: false, img: this.add.image(x, y, TEX.spark).setScale(PIXEL).setDepth(3), alive: false };
       this.sparks.push(s);
     }
     s.x = x; s.y = y; s.value = value; s.pulled = false; s.alive = true;
@@ -370,7 +388,9 @@ export class RunScene extends Phaser.Scene {
           this.fireProjectile(e.x, e.y, dx / dist, dy / dist, ranged.projectileDamage * (1 + (zoneMult(this.state.zoneIndex) - 1) * 0.5));
         }
       }
-      e.img.setPosition(e.x, e.y);
+      const step = e.def.isBoss ? 0 : (Math.floor(this.clock * 6 + e.id) % 2) * PIXEL * 0.5;
+      e.img.setPosition(Math.round(e.x), Math.round(e.y - step)).setFlipX(dx < 0);
+      if (e.flash > 0) { e.flash -= dt; if (e.flash <= 0) e.img.clearTint(); }
       if (dist < e.radius + PLAYER_RADIUS) this.hurtPlayer(e.damage);
     }
   }
@@ -378,7 +398,7 @@ export class RunScene extends Phaser.Scene {
   private fireProjectile(x: number, y: number, nx: number, ny: number, dmg: number): void {
     let p = this.projectiles.find(pr => !pr.alive);
     if (!p) {
-      p = { x, y, vx: 0, vy: 0, dmg, life: 0, img: this.add.image(x, y, TEX.spark).setTint(theme.enemies.mistSpirit.color).setDepth(4), alive: false };
+      p = { x, y, vx: 0, vy: 0, dmg, life: 0, img: this.add.image(x, y, TEX.bolt).setScale(PIXEL).setDepth(4), alive: false };
       this.projectiles.push(p);
     }
     Object.assign(p, { x, y, vx: nx * PROJECTILE_SPEED, vy: ny * PROJECTILE_SPEED, dmg, life: PROJECTILE_LIFE, alive: true });

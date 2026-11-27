@@ -1,8 +1,10 @@
 import type Phaser from 'phaser';
 import { skillParam } from '../../data/skills';
+import { PIXEL } from '../textures';
 import type { EnemyRef, SkillBehavior } from './types';
 
-const COLOR = 0xbfe6ff;
+const COLOR = 0xb6ece6;
+const JAG = 7;
 
 export function createChainLightning(scene: Phaser.Scene): SkillBehavior {
   let cd = 0.3;
@@ -35,8 +37,14 @@ export function createChainLightning(scene: Phaser.Scene): SkillBehavior {
             return !b || d < (b.x - from.x) ** 2 + (b.y - from.y) ** 2 ? e : b;
           }, null);
       }
-      g.clear().lineStyle(3, COLOR, 1).beginPath();
-      points.forEach((p, i) => (i === 0 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y)));
+      g.clear().lineStyle(PIXEL, COLOR, 1).beginPath();
+      points.forEach((p, i) => {
+        if (i === 0) { g.moveTo(p.x, p.y); return; }
+        const prev = points[i - 1]!;
+        const mx = (prev.x + p.x) / 2 + (Math.random() - 0.5) * JAG * 2, my = (prev.y + p.y) / 2 + (Math.random() - 0.5) * JAG * 2;
+        g.lineTo(mx, my);
+        g.lineTo(p.x, p.y);
+      });
       g.strokePath();
       fade = 0.2;
     },

@@ -1,26 +1,37 @@
 import type Phaser from 'phaser';
+import { ENEMY_SPRITES, SPRITES } from '../art/grids';
+import { bossGrid, groundTile, vignetteGrid } from '../art/procedural';
+import { dashedRing, ditherDisc, gridToCanvas, type Grid } from '../art/render';
 
-export const TEX = { glow: 'glow', circle: 'circle', spark: 'spark' } as const;
-export const GLOW_SIZE = 128;
-export const CIRCLE_SIZE = 32;
+/** Ekranda bir sprite pikselinin kaç CSS pikseli olduğu. */
+export const PIXEL = 3;
+export const LIGHT_SIZE = 64;
+export const GLOW_SIZE = 24;
 
-/** Tüm dokular prosedürel: parlayan daire, düz daire, kıvılcım. */
+export const TEX = {
+  player: 'player', spark: 'spark', bolt: 'bolt', flame: 'flame', spear: 'spear',
+  light: 'light', ring: 'ring', glow: 'glow', mistGlow: 'mistGlow', ground: 'ground', boss: 'mistHeart',
+} as const;
+
+const add = (scene: Phaser.Scene, key: string, g: Grid) => {
+  if (!scene.textures.exists(key)) scene.textures.addCanvas(key, gridToCanvas(g));
+};
+
 export function makeTextures(scene: Phaser.Scene): void {
-  if (scene.textures.exists(TEX.glow)) return;
-  const g = scene.add.graphics();
-  const steps = 24;
-  for (let i = 0; i < steps; i++) {
-    g.fillStyle(0xffffff, 0.06);
-    g.fillCircle(GLOW_SIZE / 2, GLOW_SIZE / 2, (GLOW_SIZE / 2) * (1 - i / steps));
-  }
-  g.generateTexture(TEX.glow, GLOW_SIZE, GLOW_SIZE);
-  g.clear();
-  g.fillStyle(0xffffff, 1);
-  g.fillCircle(CIRCLE_SIZE / 2, CIRCLE_SIZE / 2, CIRCLE_SIZE / 2);
-  g.generateTexture(TEX.circle, CIRCLE_SIZE, CIRCLE_SIZE);
-  g.clear();
-  g.fillStyle(0xffffff, 1);
-  g.fillCircle(6, 6, 6);
-  g.generateTexture(TEX.spark, 12, 12);
-  g.destroy();
+  for (const [k, g] of Object.entries(SPRITES)) add(scene, k, g);
+  for (const [k, g] of Object.entries(ENEMY_SPRITES)) add(scene, k, g);
+  add(scene, TEX.boss, bossGrid());
+  add(scene, TEX.light, ditherDisc(LIGHT_SIZE, 'E', 0.15));
+  add(scene, TEX.ring, dashedRing(LIGHT_SIZE, 'Y'));
+  add(scene, TEX.glow, ditherDisc(GLOW_SIZE, 'E', 0.35, 'Y', 0.2));
+  add(scene, TEX.mistGlow, ditherDisc(GLOW_SIZE, 'C', 0.35));
+  add(scene, TEX.ground, groundTile());
+}
+
+/** Ekran boyutuna göre sis çerçevesi dokusu (her boyut için bir kez). */
+export function vignetteTexture(scene: Phaser.Scene, width: number, height: number): string {
+  const w = Math.ceil(width / PIXEL), h = Math.ceil(height / PIXEL);
+  const key = `vignette-${w}x${h}`;
+  add(scene, key, vignetteGrid(w, h));
+  return key;
 }

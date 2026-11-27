@@ -14,7 +14,10 @@ test('her seçim için bir kart, tıklayınca onChoose', () => {
   const cards = document.querySelectorAll('[data-choice]');
   expect(cards).toHaveLength(3);
   expect(cards[1]!.textContent).toContain(theme.skills.wick.name);
-  expect(cards[1]!.textContent).toContain('Sv 2');
+  expect(cards[1]!.querySelectorAll('.pip.on')).toHaveLength(1);
+  expect(cards[1]!.querySelectorAll('.pip.new')).toHaveLength(1);
+  expect(cards[1]!.querySelectorAll('.pip')).toHaveLength(5);
+  expect(cards[1]!.querySelector('img')).not.toBeNull();
   (cards[1] as HTMLElement).click();
   expect(onChoose).toHaveBeenCalledWith(skill('wick', 2));
 });

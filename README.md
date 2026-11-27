@@ -18,3 +18,6 @@ Telefonda: `npm run dev` sonrası aynı ağdan `http://<bilgisayar-ip>:5173/` �
 **GitHub Pages:** Repo → Settings → Pages → Source: *GitHub Actions*. `main`'e push edince
 `https://emrecanberktas.github.io/fener-tasiyicisi/` adresine yayınlanır; telefonda açıp
 "Ana ekrana ekle" ile uygulama gibi kurulur ve internetsiz çalışır.
+
+**Görseller:** Tüm sprite'lar `src/art/grids.ts` içinde elle çizilmiş karakter ızgaraları (palet: `src/art/palette.ts`).
+`npm run dev` sonrası `/art.html` sayfası hepsini büyütülmüş gösterir; bir satırı değiştirip anında görebilirsin.
