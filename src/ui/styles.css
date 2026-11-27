@@ -1,0 +1,145 @@
+:root {
+  --bg: #07090a;
+  --panel: rgba(16, 20, 18, 0.94);
+  --panel-2: #141a17;
+  --line: rgba(255, 214, 150, 0.14);
+  --amber: #ffc46b;
+  --amber-2: #ff8a3d;
+  --text: #f3ead8;
+  --muted: #9a9384;
+  --hp: #e8604c;
+  --xp: #ffc46b;
+  --boss: #c9d6ea;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --radius: 16px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+#app { position: fixed; inset: 0; overflow: hidden; }
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  cursor: pointer;
+  min-height: 48px;
+  min-width: 48px;
+}
+
+.muted { color: var(--muted); }
+
+/* ---- oyun katmanı ---- */
+.game { position: absolute; inset: 0; }
+.game canvas { touch-action: none; }
+
+.hud {
+  position: absolute;
+  top: calc(var(--safe-top) + 10px);
+  left: 14px;
+  right: 14px;
+  pointer-events: none;
+  display: grid;
+  gap: 6px;
+}
+.hud-row { display: flex; justify-content: space-between; font-weight: 700; font-variant-numeric: tabular-nums; text-shadow: 0 1px 6px #000; }
+.hud-time { color: var(--amber); }
+.bar { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.bar.thin { height: 5px; }
+.bar-fill { height: 100%; width: 0; border-radius: inherit; transition: width 120ms linear; }
+.bar-fill.xp { background: linear-gradient(90deg, var(--amber-2), var(--amber)); }
+.bar-fill.hp { background: var(--hp); }
+.bar-fill.boss { background: var(--boss); }
+.boss-bar { height: 10px; margin-top: 4px; }
+
+.pause-btn {
+  position: absolute;
+  right: 16px;
+  bottom: calc(var(--safe-bottom) + 16px);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 14px;
+  letter-spacing: -2px;
+}
+
+/* ---- katmanlar ---- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px 16px calc(var(--safe-bottom) + 20px);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.75) 45%, rgba(0, 0, 0, 0.92) 100%);
+  animation: fade-in 160ms ease-out;
+  z-index: 10;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.levelup-head { display: grid; gap: 2px; margin-bottom: 14px; font-size: 22px; font-weight: 800; }
+.eyebrow { font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); }
+.cards { display: grid; gap: 10px; }
+.card {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  min-height: 88px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.card:active { transform: scale(0.98); border-color: var(--amber); }
+.card.active { border-left: 3px solid var(--amber); }
+.card.passive { border-left: 3px solid #6fcf9a; }
+.card-tag { font-size: 12px; color: var(--muted); font-weight: 600; }
+.card-title { font-size: 18px; font-weight: 800; }
+.card-desc { font-size: 14px; color: #d8cfbd; }
+
+.ghost {
+  margin-top: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.primary {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--amber), var(--amber-2));
+  color: #1b1208;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.modal { justify-content: flex-end; }
+.sheet {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 22px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.sheet h2 { margin: 0 0 4px; font-size: 20px; }
+.sheet p { margin: 0 0 6px; }

@@ -4,17 +4,17 @@ import { createRunState } from './core/run/runState';
 import { createDefaultSave } from './core/save/schema';
 import { SKILLS } from './data/skills';
 import type { SkillId } from './data/types';
-import { startRun } from './game/createRun';
+import { startRun, type RunHandle } from './game/createRun';
+import { createHud } from './ui/screens/hud';
+import { showLevelUp } from './ui/screens/levelUp';
+import { showPausePanel } from './ui/screens/pause';
+import './ui/styles.css';
 
 const app = document.getElementById('app')!;
 const params = new URLSearchParams(location.search);
 
 // Geçici geliştirici yolu (Görev 15'te router ile değişecek): ?dev=run[&t=470][&zone=1][&level=8]
 if (params.get('dev') === 'run') {
-  document.body.style.margin = '0';
-  document.body.style.background = '#000';
-  app.style.width = '100vw';
-  app.style.height = '100dvh';
   const save = { ...createDefaultSave(Date.now()), account: { level: Number(params.get('level') ?? 1), xp: 0 } };
   const stats = computePlayerStats(save);
   const unlocked: SkillId[] = unlockedSkills(save);
@@ -22,15 +22,30 @@ if (params.get('dev') === 'run') {
   state.elapsedSec = Number(params.get('t') ?? 0);
   // ?skills=all3: tüm yetenekler seviye 3 (en fazla 4 aktif + 4 pasif değil; görsel test için hepsi)
   if (params.get('skills') === 'all3') for (const id of Object.keys(SKILLS) as SkillId[]) state.skills[id] = 3;
-  const run = startRun(app, {
+  const gameEl = document.createElement('div');
+  gameEl.className = 'game';
+  app.append(gameEl);
+  let run: RunHandle;
+  let closeLevelUp = () => {};
+  const hud = createHud(app, {
+    onPause: () => {
+      run.pause();
+      const close = showPausePanel(app, { onContinue: () => { close(); run.resume(); }, onEnd: () => { close(); run.forfeit(); } });
+    },
+  });
+  run = startRun(gameEl, {
     state, stats, unlocked,
     statsFor: s => runStats(stats, s.skills),
-    onHud: () => {},
-    onLevelUp: choices => {
-      console.log('[dev] seviye kartları', choices);
-      setTimeout(() => run.chooseLevelUp(choices[0]!), 0);
+    onHud: h => hud.update(h),
+    onLevelUp: (choices, cur) => {
+      closeLevelUp();
+      closeLevelUp = showLevelUp(app, choices, cur, {
+        rerollsLeft: cur.rerollsLeft,
+        onChoose: c => { closeLevelUp(); closeLevelUp = () => {}; run.chooseLevelUp(c); },
+        onReroll: () => run.reroll(),
+      });
     },
-    onAutosave: s => console.log('[dev] kayıt', s.elapsedSec.toFixed(1)),
+    onAutosave: () => {},
     onEnd: r => console.log('[dev] tur bitti', r),
   });
 } else {

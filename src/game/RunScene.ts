@@ -37,7 +37,7 @@ export interface RunOptions {
   /** Tur içi pasiflerle güncellenmiş istatistikler (G13). Verilmezse stats kullanılır. */
   statsFor?: (state: RunState) => PlayerStats;
   onHud(h: HudState): void;
-  onLevelUp(choices: LevelUpChoice[]): void;
+  onLevelUp(choices: LevelUpChoice[], state: RunState): void;
   onAutosave(s: RunState): void;
   onEnd(result: RunResult): void;
 }
@@ -163,7 +163,7 @@ export class RunScene extends Phaser.Scene {
   reroll(): void {
     if (!this.inLevelUp || this.state.rerollsLeft <= 0) return;
     this.state = { ...this.state, rerollsLeft: this.state.rerollsLeft - 1 };
-    this.opts.onLevelUp(this.rollChoices());
+    this.opts.onLevelUp(this.rollChoices(), this.getState());
   }
 
   /** Oyuncunun isteğiyle tur bitirme: ölüm gibi işlenir. */
@@ -416,7 +416,8 @@ export class RunScene extends Phaser.Scene {
     this.joyOrigin = null;
     this.joyBase.setVisible(false);
     this.joyKnob.setVisible(false);
-    this.opts.onLevelUp(this.rollChoices());
+    this.emitHud();
+    this.opts.onLevelUp(this.rollChoices(), this.getState());
   }
 
   private emitHud(): void {
