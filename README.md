@@ -4,7 +4,7 @@ Tek elle, dikey ekranda oynanan survivor-like + kalıcı RPG gelişimli kişisel
 
 - Tasarım: `docs/superpowers/specs/2026-11-27-fener-tasiyicisi-design.md`
 - Plan: `docs/superpowers/plans/2026-11-27-fener-tasiyicisi.md` (Görev 1-12 tamam, sıradaki: Görev 13)
-- İlerleme defteri: `.superpowers/` git'e girmiyor; durum bu README'de ve commit geçmişinde.
+- İlerleme defteri ve verilen kararlar: `docs/superpowers/progress.md` (evde devam ederken `.superpowers/sdd/2026-11-27-fener-tasiyicisi/progress.md` olarak kopyala).
 
 ```bash
 npm install
